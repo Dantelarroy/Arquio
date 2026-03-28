@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Credenciales requeridas" }, { status: 400 });
   }
 
-  const correctPassword = process.env.AUTH_PASSWORD;
+  const correctPassword = process.env.AUTH_PASSWORD?.trim();
   if (!correctPassword) {
     return NextResponse.json({ error: "Auth no configurada" }, { status: 500 });
   }
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Email no autorizado" }, { status: 403 });
   }
 
-  if (password !== correctPassword) {
+  if (password.trim() !== correctPassword) {
     return NextResponse.json({ error: "Contraseña incorrecta" }, { status: 401 });
   }
 
