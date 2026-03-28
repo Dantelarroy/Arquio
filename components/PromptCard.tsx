@@ -11,8 +11,9 @@ interface PromptCardProps {
 
 export function PromptCard({ item, index, onPromptChange }: PromptCardProps) {
   const isLoading  = item.status === "generating-prompt";
-  const hasPrompt  = ["prompt-ready", "generating-image", "done"].includes(item.status);
-  const hasError   = item.status === "error";
+  const hasPromptError = item.status === "error" && item.errorStage === "prompt";
+  const hasImageError = item.status === "error" && item.errorStage === "image";
+  const hasPrompt = ["prompt-ready", "generating-image", "done"].includes(item.status) || hasImageError;
 
   return (
     <div className={clsx(
@@ -46,7 +47,7 @@ export function PromptCard({ item, index, onPromptChange }: PromptCardProps) {
             OK
           </span>
         )}
-        {hasError && (
+        {hasPromptError && (
           <span className="absolute top-2.5 right-2.5 arqu-label bg-red-500 text-white px-2 py-0.5">
             ERR
           </span>
@@ -62,18 +63,25 @@ export function PromptCard({ item, index, onPromptChange }: PromptCardProps) {
           )}
         </div>
 
-        {hasError && item.error ? (
+        {hasPromptError && item.error ? (
           <p className="text-[11px] text-red-500 bg-red-50 p-3 border border-red-100">{item.error}</p>
         ) : (
-          <textarea
-            value={item.editedPrompt || item.prompt}
-            onChange={(e) => onPromptChange(item.id, e.target.value)}
-            disabled={isLoading || !hasPrompt}
-            rows={5}
-            className="arqu-textarea flex-1"
-            placeholder={isLoading ? "Analizando imagen..." : "El prompt aparecerá aquí..."}
-            spellCheck={false}
-          />
+          <>
+            {hasImageError && item.error && (
+              <p className="text-[11px] text-amber-700 bg-amber-50 p-3 border border-amber-100">
+                Último render falló: {item.error}
+              </p>
+            )}
+            <textarea
+              value={item.editedPrompt || item.prompt}
+              onChange={(e) => onPromptChange(item.id, e.target.value)}
+              disabled={isLoading || !hasPrompt}
+              rows={5}
+              className="arqu-textarea flex-1"
+              placeholder={isLoading ? "Analizando imagen..." : "El prompt aparecerá aquí..."}
+              spellCheck={false}
+            />
+          </>
         )}
       </div>
     </div>

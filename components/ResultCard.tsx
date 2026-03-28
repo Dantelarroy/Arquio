@@ -7,12 +7,15 @@ import type { ImageItem } from "@/types";
 interface ResultCardProps {
   item: ImageItem;
   index: number;
+  onRetry?: (id: string) => void;
+  isRetrying?: boolean;
 }
 
-export function ResultCard({ item, index }: ResultCardProps) {
+export function ResultCard({ item, index, onRetry, isRetrying = false }: ResultCardProps) {
   const isGenerating = item.status === "generating-image";
   const isDone       = item.status === "done";
   const hasError     = item.status === "error";
+  const canRetry     = hasError && item.errorStage === "image" && typeof onRetry === "function";
 
   const handleDownload = () => {
     if (!item.generatedImageUrl || !item.generatedMimeType) return;
@@ -40,6 +43,15 @@ export function ResultCard({ item, index }: ResultCardProps) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
             </svg>
             DESCARGAR
+          </button>
+        )}
+        {canRetry && (
+          <button
+            onClick={() => onRetry?.(item.id)}
+            disabled={isRetrying}
+            className="arqu-label text-[#C85A3C] hover:text-[#A5452B] transition-colors disabled:opacity-50"
+          >
+            {isRetrying ? "REGENERANDO" : "REGENERAR"}
           </button>
         )}
       </div>
@@ -79,7 +91,11 @@ export function ResultCard({ item, index }: ResultCardProps) {
             )}
             {hasError && (
               <div className="p-4 text-center">
-                <p className="text-[10px] text-red-400 leading-relaxed">{item.error || "Error al generar"}</p>
+                <p className="text-[10px] text-red-400 leading-relaxed">
+                  {item.errorStage === "prompt"
+                    ? item.error || "No se pudo generar el prompt"
+                    : item.error || "Error al generar"}
+                </p>
               </div>
             )}
             {item.status === "prompt-ready" && (

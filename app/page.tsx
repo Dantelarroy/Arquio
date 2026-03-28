@@ -30,6 +30,20 @@ export default function HomePage() {
     setImages((prev) => prev.filter((img) => img.id !== id));
   }, []);
 
+  const imageRenderErrors = images.filter(
+    (img) => img.status === "error" && img.errorStage === "image"
+  ).length;
+  const promptProgressCount = images.filter(
+    (img) =>
+      ["prompt-ready", "generating-image", "done"].includes(img.status) ||
+      (img.status === "error" && img.errorStage === "image")
+  ).length;
+  const renderReadyCount = images.filter(
+    (img) =>
+      img.status === "prompt-ready" ||
+      (img.status === "error" && img.errorStage === "image")
+  ).length;
+
   // ── Generate prompts ──────────────────────────────────────────────────────
 
   const generatePrompts = async () => {
@@ -49,13 +63,13 @@ export default function HomePage() {
         });
         const data = await res.json();
         if (!res.ok || data.error) {
-          setImages((prev) => prev.map((i) => i.id === img.id ? { ...i, status: "error", error: data.error } : i));
+          setImages((prev) => prev.map((i) => i.id === img.id ? { ...i, status: "error", error: data.error, errorStage: "prompt", generatedImageUrl: undefined, generatedMimeType: undefined } : i));
         } else {
-          setImages((prev) => prev.map((i) => i.id === img.id ? { ...i, status: "prompt-ready", prompt: data.prompt, editedPrompt: data.prompt } : i));
+          setImages((prev) => prev.map((i) => i.id === img.id ? { ...i, status: "prompt-ready", prompt: data.prompt, editedPrompt: data.prompt, error: undefined, errorStage: undefined, generatedImageUrl: undefined, generatedMimeType: undefined } : i));
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : "Error de red";
-        setImages((prev) => prev.map((i) => i.id === img.id ? { ...i, status: "error", error: message } : i));
+        setImages((prev) => prev.map((i) => i.id === img.id ? { ...i, status: "error", error: message, errorStage: "prompt", generatedImageUrl: undefined, generatedMimeType: undefined } : i));
       }
     }
     setIsGeneratingPrompts(false);
@@ -63,15 +77,23 @@ export default function HomePage() {
 
   // ── Generate images ───────────────────────────────────────────────────────
 
-  const generateImages = async () => {
-    const ready = images.filter((i) => i.status === "prompt-ready" || i.status === "error");
+  const generateImages = useCallback(async (targetIds?: string[]) => {
+    const ready = images.filter((img) => {
+      const isSelected = !targetIds || targetIds.includes(img.id);
+      const isReadyForRender =
+        img.status === "prompt-ready" ||
+        (img.status === "error" && img.errorStage === "image");
+
+      return isSelected && isReadyForRender;
+    });
+
     if (!ready.length) return;
     setIsGeneratingImages(true);
     setStep("results");
 
     setImages((prev) => prev.map((img) =>
-      img.status === "prompt-ready" || img.status === "error"
-        ? { ...img, status: "generating-image", error: undefined }
+      ready.some((item) => item.id === img.id)
+        ? { ...img, status: "generating-image", error: undefined, errorStage: undefined }
         : img
     ));
 
@@ -87,9 +109,9 @@ export default function HomePage() {
         });
         const data = await res.json();
         if (!res.ok || data.error) {
-          setImages((prev) => prev.map((i) => i.id === img.id ? { ...i, status: "error", error: data.error } : i));
+          setImages((prev) => prev.map((i) => i.id === img.id ? { ...i, status: "error", error: data.error, errorStage: "image" } : i));
         } else {
-          setImages((prev) => prev.map((i) => i.id === img.id ? { ...i, status: "done", generatedImageUrl: data.imageBase64, generatedMimeType: data.mimeType } : i));
+          setImages((prev) => prev.map((i) => i.id === img.id ? { ...i, status: "done", generatedImageUrl: data.imageBase64, generatedMimeType: data.mimeType, error: undefined, errorStage: undefined } : i));
           const { base64: origB64, mimeType: origMt } = await compressImage(img.file, 1200, 1200, 0.82);
           fetch("/api/save-render", {
             method: "POST",
@@ -99,15 +121,19 @@ export default function HomePage() {
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : "Error de red";
-        setImages((prev) => prev.map((i) => i.id === img.id ? { ...i, status: "error", error: message } : i));
+        setImages((prev) => prev.map((i) => i.id === img.id ? { ...i, status: "error", error: message, errorStage: "image" } : i));
       }
     }
     setIsGeneratingImages(false);
-  };
+  }, [images, sessionId]);
 
   const handlePromptChange = useCallback((id: string, prompt: string) => {
     setImages((prev) => prev.map((img) => img.id === id ? { ...img, editedPrompt: prompt } : img));
   }, []);
+
+  const handleRetryImage = useCallback((id: string) => {
+    void generateImages([id]);
+  }, [generateImages]);
 
   const handleDownloadAll = async () => {
     const done = images.filter((i) => i.status === "done" && i.generatedImageUrl && i.generatedMimeType);
@@ -121,7 +147,6 @@ export default function HomePage() {
 
   const handleReset = () => { setImages([]); setStep("upload"); };
 
-  const promptsReady   = images.filter((i) => ["prompt-ready","generating-image","done"].includes(i.status)).length;
   const imagesGenerated = images.filter((i) => i.status === "done").length;
   const hasErrors      = images.some((i) => i.status === "error");
 
@@ -241,7 +266,7 @@ export default function HomePage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                   </svg>
-                  <span className="arqu-label">{promptsReady}/{images.length} listos</span>
+                  <span className="arqu-label">{promptProgressCount}/{images.length} listos</span>
                 </div>
               )}
             </div>
@@ -271,16 +296,16 @@ export default function HomePage() {
                 )}
               </div>
               <button
-                onClick={generateImages}
-                disabled={isGeneratingPrompts || promptsReady === 0}
+                onClick={() => void generateImages()}
+                disabled={isGeneratingPrompts || renderReadyCount === 0}
                 className="arqu-btn-primary"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909" />
                 </svg>
                 {isGeneratingPrompts
-                  ? `Esperando (${promptsReady}/${images.length})`
-                  : `Generar Renders — ${promptsReady}`}
+                  ? `Esperando (${promptProgressCount}/${images.length})`
+                  : `Generar Renders — ${renderReadyCount}`}
               </button>
             </div>
           </div>
@@ -330,7 +355,7 @@ export default function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-0.5 bg-[#E0DCD3]">
               {images.map((img, i) => (
                 <div key={img.id} className="bg-[#F4F1EA]">
-                  <ResultCard item={img} index={i} />
+                  <ResultCard item={img} index={i} onRetry={handleRetryImage} isRetrying={isGeneratingImages && img.status === "generating-image"} />
                 </div>
               ))}
             </div>
@@ -341,9 +366,9 @@ export default function HomePage() {
                 <button onClick={() => setStep("prompts")} className="arqu-label hover:text-[#2A2B2A] transition-colors">
                   ← Editar prompts
                 </button>
-                {hasErrors && !isGeneratingImages && (
-                  <button onClick={generateImages} className="arqu-label text-[#C85A3C] hover:text-[#A5452B] transition-colors">
-                    Reintentar errores
+                {imageRenderErrors > 0 && !isGeneratingImages && (
+                  <button onClick={() => void generateImages()} className="arqu-label text-[#C85A3C] hover:text-[#A5452B] transition-colors">
+                    Reintentar fallidas ({imageRenderErrors})
                   </button>
                 )}
               </div>

@@ -12,6 +12,7 @@ export interface ImageItem {
   // Status tracking
   status: ImageStatus;
   error?: string;
+  errorStage?: ImageErrorStage;
 }
 
 export type ImageStatus =
@@ -21,6 +22,8 @@ export type ImageStatus =
   | "generating-image"
   | "done"
   | "error";
+
+export type ImageErrorStage = "prompt" | "image";
 
 export type AppStep = "upload" | "prompts" | "results";
 
@@ -45,4 +48,5 @@ export interface GenerateImageResponse {
   imageBase64: string;
   mimeType: string;
   error?: string;
+  code?: string;
 }
