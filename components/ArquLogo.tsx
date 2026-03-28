@@ -9,8 +9,8 @@ interface ArquLogoProps {
 }
 
 export function ArquLogo({ height = 32, linked = true }: ArquLogoProps) {
-  // arqu logo 1 is roughly 1050×840 → ratio ~1.25 wide
-  const width = Math.round(height * 1.25);
+  // Cropped asset ratio from public/logo.png.
+  const width = Math.round(height * (1027 / 697));
 
   const img = (
     // eslint-disable-next-line @next/next/no-img-element

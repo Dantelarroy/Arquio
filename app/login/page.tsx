@@ -6,8 +6,6 @@ import { ArquLogo } from "@/components/ArquLogo";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -15,6 +13,10 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
+
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
+    const email = String(formData.get("email") || "");
+    const password = String(formData.get("password") || "");
 
     try {
       const res = await fetch("/api/auth/login", {
@@ -47,7 +49,7 @@ export default function LoginPage() {
 
           {/* Logo */}
           <div className="mb-16 flex justify-center">
-            <ArquLogo height={88} linked={false} />
+            <ArquLogo height={120} linked={false} />
           </div>
 
           {/* Heading */}
@@ -62,12 +64,12 @@ export default function LoginPage() {
               <label className="arqu-label block mb-2">Email</label>
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                name="email"
                 required
                 autoComplete="email"
                 placeholder="tu@email.com"
                 className="arqu-textarea w-full"
+                suppressHydrationWarning
                 style={{ fontFamily: "inherit", fontSize: "13px", letterSpacing: "normal", textTransform: "none" }}
               />
             </div>
@@ -76,12 +78,12 @@ export default function LoginPage() {
               <label className="arqu-label block mb-2">Contraseña</label>
               <input
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                name="password"
                 required
                 autoComplete="current-password"
                 placeholder="••••••••••••••••"
                 className="arqu-textarea w-full"
+                suppressHydrationWarning
                 style={{ fontFamily: "inherit", fontSize: "13px", letterSpacing: "normal" }}
               />
             </div>
