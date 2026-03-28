@@ -97,9 +97,9 @@ export default function AjustesPage() {
 
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#F4F1EA]/95 backdrop-blur-sm border-b border-[#E0DCD3]">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-6 h-[4.5rem] flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <ArquLogo height={34} />
+            <ArquLogo height={40} />
             <span className="text-[#E0DCD3]">/</span>
             <span className="arqu-label">Ajustes</span>
           </div>

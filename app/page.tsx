@@ -155,8 +155,8 @@ export default function HomePage() {
 
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-[#F4F1EA]/95 backdrop-blur-sm border-b border-[#E0DCD3]">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
-          <ArquLogo height={34} />
+        <div className="max-w-7xl mx-auto px-6 h-[4.5rem] flex items-center justify-between gap-4">
+          <ArquLogo height={40} />
 
           {/* Step indicator centered */}
           <div className="hidden md:flex flex-1 justify-center">

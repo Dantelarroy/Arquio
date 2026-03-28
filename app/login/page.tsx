@@ -46,8 +46,8 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
 
           {/* Logo */}
-          <div className="mb-14 flex justify-center">
-            <ArquLogo height={64} linked={false} />
+          <div className="mb-16 flex justify-center">
+            <ArquLogo height={88} linked={false} />
           </div>
 
           {/* Heading */}
