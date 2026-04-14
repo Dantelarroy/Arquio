@@ -9,7 +9,7 @@ import { UploadZone } from "@/components/UploadZone";
 import { MasterPromptEditor, DEFAULT_MASTER_PROMPT } from "@/components/MasterPromptEditor";
 import { PromptCard } from "@/components/PromptCard";
 import { ResultCard } from "@/components/ResultCard";
-import { compressImage, downloadAllAsZip } from "@/lib/imageUtils";
+import { compressImage, downloadAllAsZip, cropBase64ToRatio } from "@/lib/imageUtils";
 import type { ImageItem, AppStep } from "@/types";
 
 export default function HomePage() {
@@ -117,7 +117,16 @@ export default function HomePage() {
         if (!res.ok || data.error) {
           setImages((prev) => prev.map((i) => i.id === img.id ? { ...i, status: "error", error: data.error, errorStage: "image" } : i));
         } else {
-          setImages((prev) => prev.map((i) => i.id === img.id ? { ...i, status: "done", generatedImageUrl: data.imageBase64, generatedMimeType: data.mimeType, error: undefined, errorStage: undefined } : i));
+          // Crop the generated image to match the original's aspect ratio.
+          // Gemini always outputs 1:1 — this centers and crops to the correct shape.
+          let { imageBase64: renderedB64, mimeType: renderedMt } = data;
+          if (img.aspectRatio) {
+            const [rw, rh] = img.aspectRatio.split(":").map(Number);
+            const cropped = await cropBase64ToRatio(renderedB64, renderedMt, rw / rh);
+            renderedB64 = cropped.base64;
+            renderedMt = cropped.mimeType;
+          }
+          setImages((prev) => prev.map((i) => i.id === img.id ? { ...i, status: "done", generatedImageUrl: renderedB64, generatedMimeType: renderedMt, error: undefined, errorStage: undefined } : i));
           const { base64: origB64, mimeType: origMt } = await compressImage(img.file, 1200, 1200, 0.82);
           fetch("/api/save-render", {
             method: "POST",

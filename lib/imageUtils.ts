@@ -66,6 +66,57 @@ export function generateId(): string {
 }
 
 /**
+ * Recorta un base64 al ratio dado (w/h) desde el centro.
+ * Usado para normalizar el output de Gemini (siempre 1:1) al ratio del input.
+ */
+export async function cropBase64ToRatio(
+  base64: string,
+  mimeType: string,
+  targetRatio: number
+): Promise<{ base64: string; mimeType: string }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const srcW = img.naturalWidth;
+      const srcH = img.naturalHeight;
+      const srcRatio = srcW / srcH;
+
+      let cropW = srcW;
+      let cropH = srcH;
+      let offsetX = 0;
+      let offsetY = 0;
+
+      if (Math.abs(srcRatio - targetRatio) < 0.05) {
+        // Already close enough — skip crop
+        resolve({ base64, mimeType });
+        return;
+      }
+
+      if (srcRatio > targetRatio) {
+        // Source wider than target → crop horizontally
+        cropW = Math.round(srcH * targetRatio);
+        offsetX = Math.round((srcW - cropW) / 2);
+      } else {
+        // Source taller than target → crop vertically
+        cropH = Math.round(srcW / targetRatio);
+        offsetY = Math.round((srcH - cropH) / 2);
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = cropW;
+      canvas.height = cropH;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { resolve({ base64, mimeType }); return; }
+      ctx.drawImage(img, offsetX, offsetY, cropW, cropH, 0, 0, cropW, cropH);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+      resolve({ base64: dataUrl.split(",")[1], mimeType: "image/jpeg" });
+    };
+    img.onerror = () => resolve({ base64, mimeType });
+    img.src = `data:${mimeType};base64,${base64}`;
+  });
+}
+
+/**
  * Detecta el aspect ratio de un File y lo mapea al ratio Gemini más cercano.
  * Gemini soporta: "1:1", "3:4", "4:3", "9:16", "16:9"
  */
