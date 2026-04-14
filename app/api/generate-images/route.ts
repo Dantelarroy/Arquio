@@ -3,6 +3,30 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const maxDuration = 120;
 
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  retries = 3,
+  baseDelayMs = 2000
+): Promise<T> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (attempt === retries - 1) throw err;
+      const msg = (err instanceof Error ? err.message : "").toLowerCase();
+      const retryable =
+        msg.includes("429") ||
+        msg.includes("quota") ||
+        msg.includes("503") ||
+        msg.includes("overloaded") ||
+        msg.includes("resource exhausted");
+      if (!retryable) throw err;
+      await new Promise((r) => setTimeout(r, baseDelayMs * (attempt + 1)));
+    }
+  }
+  throw new Error("Max retries exceeded");
+}
+
 function buildFriendlyGeminiError(message: string, model: string) {
   const normalized = message.toLowerCase();
 
@@ -83,11 +107,13 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts }],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      generationConfig: { responseModalities: ["image", "text"] } as any,
-    });
+    const result = await withRetry(() =>
+      model.generateContent({
+        contents: [{ role: "user", parts }],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        generationConfig: { responseModalities: ["image", "text"] } as any,
+      })
+    );
 
     const candidate = result.response.candidates?.[0];
     if (!candidate?.content?.parts) {

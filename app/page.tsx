@@ -97,15 +97,21 @@ export default function HomePage() {
         : img
     ));
 
-    for (const img of ready) {
+    for (let idx = 0; idx < ready.length; idx++) {
+      const img = ready[idx];
       const prompt = img.editedPrompt || img.prompt;
       if (!prompt) continue;
+
+      // Delay between requests to avoid Gemini rate limiting (skip first)
+      if (idx > 0) await new Promise((r) => setTimeout(r, 1200));
+
       try {
-        const { base64, mimeType } = await compressImage(img.file, 1600, 1600, 0.88);
+        // Send only the text prompt — passing the SketchUp image causes Gemini
+        // to do conservative image editing instead of full photorealistic generation.
         const res = await fetch("/api/generate-images", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, imageBase64: base64, mimeType }),
+          body: JSON.stringify({ prompt }),
         });
         const data = await res.json();
         if (!res.ok || data.error) {
