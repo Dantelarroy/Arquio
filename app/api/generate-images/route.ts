@@ -112,7 +112,8 @@ export async function POST(req: NextRequest) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const genConfig: any = { responseModalities: ["image", "text"] };
-    if (aspectRatio) genConfig.aspectRatio = aspectRatio;
+    // NOTE: aspectRatio is NOT a valid generationConfig field for generateContent —
+    // passing it causes a 400 Bad Request. Ratio correction is handled client-side.
 
     const result = await withRetry(() =>
       model.generateContent({
