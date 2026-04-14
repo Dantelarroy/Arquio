@@ -110,11 +110,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const genConfig: any = { responseModalities: ["image", "text"] };
+    if (aspectRatio) genConfig.aspectRatio = aspectRatio;
+
     const result = await withRetry(() =>
       model.generateContent({
         contents: [{ role: "user", parts }],
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        generationConfig: { responseModalities: ["image", "text"] } as any,
+        generationConfig: genConfig,
       })
     );
 
