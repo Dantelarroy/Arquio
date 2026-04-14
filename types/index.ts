@@ -3,6 +3,7 @@ export interface ImageItem {
   file: File;
   previewUrl: string;
   name: string;
+  aspectRatio?: string; // e.g. "9:16", "3:4", "1:1", "4:3", "16:9"
   // Prompt generation
   prompt: string;
   editedPrompt: string;

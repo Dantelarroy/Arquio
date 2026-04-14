@@ -2,7 +2,7 @@
 
 import { useCallback, useState, useRef } from "react";
 import clsx from "clsx";
-import { generateId, compressImage } from "@/lib/imageUtils";
+import { generateId, compressImage, getImageAspectRatio } from "@/lib/imageUtils";
 import type { ImageItem } from "@/types";
 
 interface UploadZoneProps {
@@ -22,12 +22,16 @@ export function UploadZone({ images, onImagesAdd, onImageRemove }: UploadZonePro
     setIsProcessing(true);
     const newItems: ImageItem[] = await Promise.all(
       arr.map(async (file) => {
-        const { base64, mimeType } = await compressImage(file);
+        const [{ base64, mimeType }, aspectRatio] = await Promise.all([
+          compressImage(file),
+          getImageAspectRatio(file),
+        ]);
         return {
           id: generateId(),
           file,
           previewUrl: `data:${mimeType};base64,${base64}`,
           name: file.name.replace(/\.[^.]+$/, ""),
+          aspectRatio,
           prompt: "",
           editedPrompt: "",
           status: "idle" as const,

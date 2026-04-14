@@ -71,7 +71,7 @@ function extractTextParts(parts: unknown[]) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, imageBase64, mimeType } = await req.json();
+    const { prompt, imageBase64, mimeType, aspectRatio } = await req.json();
 
     if (!prompt) {
       return NextResponse.json(
@@ -93,10 +93,13 @@ export async function POST(req: NextRequest) {
 
     const model = genAI.getGenerativeModel({ model: imageModel });
 
-    // Build parts: always include the prompt text.
-    // If we have the reference SketchUp image, include it for better composition fidelity.
+    // Prepend aspect ratio instruction so Gemini generates at the correct dimensions.
+    const ratioInstruction = aspectRatio
+      ? `Generate this image in ${aspectRatio} aspect ratio (${aspectRatio === "9:16" || aspectRatio === "3:4" ? "portrait" : aspectRatio === "16:9" || aspectRatio === "4:3" ? "landscape" : "square"} orientation). `
+      : "";
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const parts: any[] = [{ text: prompt }];
+    const parts: any[] = [{ text: ratioInstruction + prompt }];
 
     if (imageBase64) {
       parts.push({

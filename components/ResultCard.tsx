@@ -88,9 +88,9 @@ export function ResultCard({ item, index, onRetry, isRetrying = false }: ResultC
             className="relative group cursor-zoom-in"
             onClick={() => setLightbox("original")}
           >
-            <div className="aspect-[4/3] overflow-hidden bg-[#E0DCD3]">
+            <div className="h-[220px] overflow-hidden bg-[#E0DCD3] flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={item.previewUrl} alt="Original" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
+              <img src={item.previewUrl} alt="Original" className="max-h-full max-w-full w-auto h-auto object-contain group-hover:scale-[1.02] transition-transform duration-300" />
             </div>
             <span className="absolute bottom-0 left-0 arqu-label bg-[#2A2B2A]/70 text-white px-2 py-1">
               Original
@@ -107,7 +107,7 @@ export function ResultCard({ item, index, onRetry, isRetrying = false }: ResultC
             className={clsx("relative", isDone && "group cursor-zoom-in")}
             onClick={() => isDone && item.generatedImageUrl && setLightbox("render")}
           >
-            <div className="aspect-[4/3] overflow-hidden bg-[#F4F1EA] flex items-center justify-center">
+            <div className="h-[220px] overflow-hidden bg-[#F4F1EA] flex items-center justify-center">
               {isGenerating && (
                 <div className="flex flex-col items-center gap-2">
                   <svg className="w-5 h-5 text-[#C85A3C] animate-spin" fill="none" viewBox="0 0 24 24">
@@ -122,7 +122,7 @@ export function ResultCard({ item, index, onRetry, isRetrying = false }: ResultC
                 <img
                   src={`data:${item.generatedMimeType};base64,${item.generatedImageUrl}`}
                   alt="Render"
-                  className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                  className="max-h-full max-w-full w-auto h-auto object-contain group-hover:scale-[1.02] transition-transform duration-300"
                 />
               )}
               {hasError && (

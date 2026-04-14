@@ -111,7 +111,7 @@ export default function HomePage() {
         const res = await fetch("/api/generate-images", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt }),
+          body: JSON.stringify({ prompt, aspectRatio: img.aspectRatio }),
         });
         const data = await res.json();
         if (!res.ok || data.error) {

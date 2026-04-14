@@ -66,6 +66,27 @@ export function generateId(): string {
 }
 
 /**
+ * Detecta el aspect ratio de un File y lo mapea al ratio Gemini más cercano.
+ * Gemini soporta: "1:1", "3:4", "4:3", "9:16", "16:9"
+ */
+export async function getImageAspectRatio(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const r = img.width / img.height;
+      URL.revokeObjectURL(img.src);
+      if (r > 1.6) resolve("16:9");
+      else if (r > 1.1) resolve("4:3");
+      else if (r > 0.85) resolve("1:1");
+      else if (r > 0.55) resolve("3:4");
+      else resolve("9:16");
+    };
+    img.onerror = () => resolve("4:3");
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+/**
  * Descarga una imagen base64 como archivo.
  */
 export function downloadBase64Image(
